@@ -70,7 +70,7 @@ func nukeAllCloudformationStacks(session *session.Session, identifiers []*string
 		// Wait a maximum of 5 minutes: 10 seconds in between, up to 30 times
 		30, 10*time.Second,
 		func() error {
-			areDeleted, err := areAllCloudformationStacksDeleted(svc, identifiers)
+			areDeleted, err := areAllCloudformationStacksDeleted(svc)
 			if err != nil {
 				return errors.WithStackTrace(retry.FatalError{Underlying: err})
 			}
@@ -99,7 +99,7 @@ func deleteCloudformationStackAsync(wg *sync.WaitGroup, errChan chan error, svc 
 	errChan <- err
 }
 
-func areAllCloudformationStacksDeleted(svc *cloudformation.CloudFormation, identifiers []*string) (bool, error) {
+func areAllCloudformationStacksDeleted(svc *cloudformation.CloudFormation) (bool, error) {
 	resp, err := svc.ListStacks(&cloudformation.ListStacksInput{})
 	if err != nil {
 		return false, err
@@ -119,5 +119,5 @@ func areAllCloudformationStacksDeleted(svc *cloudformation.CloudFormation, ident
 		}
 	}
 
-	return false, nil
+	return true, nil
 }
