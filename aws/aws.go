@@ -424,6 +424,20 @@ func GetAllResources(targetRegions []string, excludeAfter time.Time, resourceTyp
 			if len(elbv2Arns) > 0 {
 				loadBalancersV2.Arns = awsgo.StringValueSlice(elbv2Arns)
 				resourcesInRegion.Resources = append(resourcesInRegion.Resources, loadBalancersV2)
+
+				targetGroups := TargetGroup{}
+				targetGroupArns, err := getTargetGroupArns(cloudNukeSession, elbv2Arns)
+				if err != nil {
+					ge := report.GeneralError{
+						Error:        err,
+						Description:  "Unable to retrieve target groups",
+						ResourceType: targetGroups.ResourceName(),
+					}
+					report.RecordError(ge)
+				}
+
+				targetGroups.Arns = awsgo.StringValueSlice(targetGroupArns)
+				resourcesInRegion.Resources = append(resourcesInRegion.Resources, targetGroups)
 			}
 		}
 		// End LoadBalancerV2 Arns
