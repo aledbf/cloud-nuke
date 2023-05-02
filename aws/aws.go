@@ -236,6 +236,36 @@ func GetAllResources(targetRegions []string, excludeAfter time.Time, resourceTyp
 		// The order in which resources are nuked is important
 		// because of dependencies between resources
 
+		// Cloudformation StackSets -- This is early on because it can control other infrastructure
+		stacksets := CloudformationStackSets{}
+		if IsNukeable(stacksets.ResourceName(), resourceTypes) {
+			sets, err := getAllCloudFormationStacksSets(cloudNukeSession)
+			if err != nil {
+				return nil, errors.WithStackTrace(err)
+			}
+
+			if len(sets) > 0 {
+				stacksets.StackSetNames = awsgo.StringValueSlice(sets)
+				resourcesInRegion.Resources = append(resourcesInRegion.Resources, stacksets)
+			}
+		}
+		// End Cloudformation StackSets
+
+		// Cloudformation Stacks
+		stacks := CloudformationStacks{}
+		if IsNukeable(stacks.ResourceName(), resourceTypes) {
+			s, err := getAllCloudFormationStacks(cloudNukeSession)
+			if err != nil {
+				return nil, errors.WithStackTrace(err)
+			}
+
+			if len(s) > 0 {
+				stacks.StackNames = awsgo.StringValueSlice(s)
+				resourcesInRegion.Resources = append(resourcesInRegion.Resources, stacks)
+			}
+		}
+		// End Cloudformation Stacks
+
 		// ACMPCA arns
 		acmpca := ACMPCA{}
 		if IsNukeable(acmpca.ResourceName(), resourceTypes) {
@@ -1800,6 +1830,8 @@ func ListResourceTypes() []string {
 		ConfigServiceRule{}.ResourceName(),
 		ConfigServiceRecorders{}.ResourceName(),
 		CloudWatchAlarms{}.ResourceName(),
+		CloudformationStackSets{}.ResourceName(),
+		CloudformationStacks{}.ResourceName(),
 	}
 	sort.Strings(resourceTypes)
 	return resourceTypes
