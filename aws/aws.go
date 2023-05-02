@@ -975,6 +975,26 @@ func GetAllResources(targetRegions []string, excludeAfter time.Time, resourceTyp
 		}
 		// End Secrets Manager Secrets
 
+		// Systems Manager Parameters
+		systemsManagerParameters := SystemsManagerParameters{}
+		if IsNukeable(systemsManagerParameters.ResourceName(), resourceTypes) {
+			secrets, err := getAllSSMParameters(cloudNukeSession, excludeAfter, configObj)
+			if err != nil {
+				ge := report.GeneralError{
+					Error:        err,
+					Description:  "Unable to retrieve Systems managers parameter entries",
+					ResourceType: systemsManagerParameters.ResourceName(),
+				}
+				report.RecordError(ge)
+			}
+
+			if len(secrets) > 0 {
+				systemsManagerParameters.Names = awsgo.StringValueSlice(secrets)
+				resourcesInRegion.Resources = append(resourcesInRegion.Resources, systemsManagerParameters)
+			}
+		}
+		// End Systems Manager Parameters
+
 		// AccessAnalyzer
 		accessAnalyzer := AccessAnalyzer{}
 		if IsNukeable(accessAnalyzer.ResourceName(), resourceTypes) {

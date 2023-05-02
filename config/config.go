@@ -17,6 +17,7 @@ type Config struct {
 	IAMServiceLinkedRoles ResourceType `yaml:"IAMServiceLinkedRoles"`
 	IAMRoles              ResourceType `yaml:"IAMRoles"`
 	SecretsManagerSecrets ResourceType `yaml:"SecretsManager"`
+	SSMParameter          ResourceType `yaml:"SSMParameter"`
 	NatGateway            ResourceType `yaml:"NatGateway"`
 	AccessAnalyzer        ResourceType `yaml:"AccessAnalyzer"`
 	CloudWatchDashboard   ResourceType `yaml:"CloudWatchDashboard"`
