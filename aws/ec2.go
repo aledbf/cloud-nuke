@@ -650,6 +650,12 @@ func (v Vpc) nuke(spinner *pterm.SpinnerPrinter) error {
 		return err
 	}
 
+	err = v.nukePeeringConnections()
+	if err != nil {
+		logging.Logger.Debugf("Error cleaning up Peering connections for VPC %s: %s", v.VpcId, err.Error())
+		return err
+	}
+
 	err = v.dissociateDhcpOptions(spinner)
 	if err != nil {
 		logging.Logger.Debugf("Error cleaning up DHCP Options for VPC %s: %s", v.VpcId, err.Error())
@@ -851,4 +857,34 @@ func GetEC2ResourceNameTagValue(tags []*ec2.Tag) (string, error) {
 		return name, nil
 	}
 	return "", fmt.Errorf("Resource does not have Name tag")
+}
+
+func (v Vpc) nukePeeringConnections() error {
+	peeringConnections, err := v.svc.DescribeVpcPeeringConnections(
+		&ec2.DescribeVpcPeeringConnectionsInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   awsgo.String("requester-vpc-info.vpc-id"),
+					Values: []*string{awsgo.String(v.VpcId)},
+				},
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, vpcPeeringConnection := range peeringConnections.VpcPeeringConnections {
+		logging.Logger.Debugf("...deleting Peering connection %s", awsgo.StringValue(vpcPeeringConnection.VpcPeeringConnectionId))
+		_, err := v.svc.DeleteVpcPeeringConnection(
+			&ec2.DeleteVpcPeeringConnectionInput{
+				VpcPeeringConnectionId: vpcPeeringConnection.VpcPeeringConnectionId,
+			},
+		)
+		if err != nil {
+			return errors.WithStackTrace(err)
+		}
+	}
+
+	return nil
 }
